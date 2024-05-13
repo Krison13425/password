@@ -3,7 +3,6 @@ package com.example.springboot.Service;
 
 import com.example.springboot.Access.UserAccess;
 import com.example.springboot.Model.User;
-import com.example.springboot.Model.UserRequestBody;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,16 +26,11 @@ public class UserService implements UserServiceInterface {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
 
+
+
     @Override
-    public boolean validateUser(UserRequestBody userRequestBody) {
-
-         User user = userAccess.findUserByName(userRequestBody.getUserName());
-
-         if(matchPassword(userRequestBody.getPassword(), user.getPassword())){
-             return true;
-         }
-
-         return false;
+    public boolean getUser() {
+        return userAccess.isTableEmpty();
     }
 
 

@@ -8,24 +8,25 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/airplane")
+@RequestMapping("/api/password")
 @CrossOrigin
 public class PasswordController {
     @Autowired
     PasswordServiceInterface passwordService;
 
     @GetMapping("/all")
-    public List<Password> getAllAirplanes() {
+    public List<Password> getAllPasswords() {
         return passwordService.getAllPassword();
     }
 
     @PostMapping("/create")
-    public ResponseEntity<String> createPlane(@RequestBody PasswordRequestBody passwordRequestBody) {
+    public ResponseEntity<String> createPassword(@RequestBody PasswordRequestBody passwordRequestBody) {
 
         try {
             boolean isCreated = passwordService.addPassword(passwordRequestBody);

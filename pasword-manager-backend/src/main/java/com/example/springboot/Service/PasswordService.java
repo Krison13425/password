@@ -39,7 +39,7 @@ public class PasswordService implements PasswordServiceInterface {
 
             password.setId(IDGenerator.generateUUID());
             password.setEmail(passwordRequestBody.getEmail());
-            password.setPassword(encodePassword(passwordRequestBody.getPassword()));
+            password.setPassword(passwordRequestBody.getPassword());
             password.setAccountName(passwordRequestBody.getAccountName());
 
 

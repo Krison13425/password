@@ -16,22 +16,21 @@ public class UserController {
     @Autowired
     UserServiceInterface userService;
 
-    @PostMapping("/login")
-    public ResponseEntity<String> createPlane(@RequestBody UserRequestBody userRequestBody) {
+
+    @GetMapping("/exist")
+    public ResponseEntity<String> getUser() {
 
         try {
-            boolean validationSuccessful = userService.validateUser(userRequestBody);
+            boolean doesUserExist = userService.getUser();
 
-            if (validationSuccessful) {
-                return new ResponseEntity<>("Login successfully.", HttpStatus.OK);
+            if (doesUserExist) {
+                return new ResponseEntity<>("User Exists.", HttpStatus.OK);
             } else {
-                return new ResponseEntity<>("Unable to Login.", HttpStatus.INTERNAL_SERVER_ERROR);
+                return new ResponseEntity<>("No Exists.", HttpStatus.NOT_FOUND);
             }
 
         } catch (IllegalArgumentException ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
-
-
 }
