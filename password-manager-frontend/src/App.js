@@ -1,9 +1,11 @@
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import React from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import MainPage from "./Pages/main";
-import { ColorModeContext, useMode } from "./theme";
+import ProtectedRoutes from "./Pages/Global/ProtectedRoutes";
 import Login from "./Pages/Login";
+import VerificationPage from "./Pages/Verification";
+import { ColorModeContext, useMode } from "./theme";
+import MainPage from "./Pages/Main";
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -15,8 +17,12 @@ function App() {
 
         <Router>
           <Routes>
-            <Route path="/" element={<MainPage />} />
             <Route path="/login" element={<Login />} />
+
+            <Route path="/verification" element={<VerificationPage />} />
+            <Route element={<ProtectedRoutes />}>
+              <Route path="/" element={<MainPage />} />
+            </Route>
           </Routes>
         </Router>
       </ThemeProvider>

@@ -14,8 +14,13 @@ import {
   Typography,
   Paper,
 } from "@mui/material";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Slider from "./Slide";
+import { Cookies } from "react-cookie";
+import { getPassword } from "../API";
+import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+import { decrypt, encrypt } from "./encrytion";
 
 const MainPage = () => {
   const [passwordDetails, setPasswordDetails] = useState({
@@ -34,6 +39,8 @@ const MainPage = () => {
 
   const [passwordVisibility, setPasswordVisibility] = useState(false);
 
+  const navigate = useNavigate();
+
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
@@ -42,47 +49,67 @@ const MainPage = () => {
     setPasswordVisibility((prev) => !prev);
   };
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     const id = localStorage.getItem("id");
-  //     if (id) {
-  //       const data = await getUserDetails(id);
-  //       if (data) {
-  //         setUserDetails(data);
-  //         setIsFilled(true);
-  //         setReadOnly(true);
-  //       } else {
-  //         setReadOnly(false);
-  //         setSnackbarOpen(true);
-  //         setSnackbarMessage(
-  //           "Please Insert the User Profile Detials First for other functions"
-  //         );
-  //         setSnackbarSeverity("error");
-  //       }
-  //     }
-  //   };
+  useEffect(() => {
+    const cookies = new Cookies();
+    const token = cookies.get("user");
 
-  //   fetchData();
-  // }, [update]);
+    const isTokenExpired = (token) => {
+      try {
+        const decoded = jwtDecode(token);
+        return decoded.exp < Date.now() / 1000;
+      } catch (error) {
+        return true;
+      }
+    };
 
-  // const handleChangePassword = async () => {
-  //   try {
-  //     const email = localStorage.getItem("useremail");
-  //     const response = await createPasswordResetToken(email);
+    const fetchPasswords = async () => {
+      try {
+        const passwords = await getPassword();
+        setPasswords(passwords);
+      } catch (error) {
+        console.error("Error fetching passwords:", error);
+      }
+    };
 
-  //     setSnackbarMessage(
-  //       "A verification Email has been sent to your email. Please verify your email for resetting the password."
-  //     );
-  //     setSnackbarSeverity("success");
-  //     setSnackbarOpen(true);
-  //   } catch (error) {
-  //     console.error(error);
+    if (!isTokenExpired(token)) {
+      fetchPasswords();
+    } else {
+      cookies.remove("user");
+      localStorage.removeItem("email");
+      sessionStorage.removeItem("mp");
+      sessionStorage.removeItem("verified");
+      navigate("/login");
+    }
+  }, [value]);
 
-  //     setSnackbarMessage(error.message);
-  //     setSnackbarSeverity("error");
-  //     setSnackbarOpen(true);
-  //   }
-  // };
+  const handleCreatePassword = async () => {
+    const encryptedPassword = encrypt(
+      passwordDetails.password,
+      sessionStorage.getItem("mp")
+    );
+
+    const passwords = {
+      name: passwordDetails.passwordName,
+      email: passwordDetails.passwordEmail,
+      password: encryptedPassword,
+    };
+
+    // try {
+    //   const response = await createPasswordResetToken(email);
+
+    //   setSnackbarMessage(
+    //     "A verification Email has been sent to your email. Please verify your email for resetting the password."
+    //   );
+    //   setSnackbarSeverity("success");
+    //   setSnackbarOpen(true);
+    // } catch (error) {
+    //   console.error(error);
+
+    //   setSnackbarMessage(error.message);
+    //   setSnackbarSeverity("error");
+    //   setSnackbarOpen(true);
+    // }
+  };
 
   return (
     <>
@@ -201,6 +228,7 @@ const MainPage = () => {
 
               <Box display="flex" justifyContent="flex-end" mt={2}>
                 <Button
+                  onClick={handleCreatePassword}
                   variant="contained"
                   color="primary"
                   sx={{

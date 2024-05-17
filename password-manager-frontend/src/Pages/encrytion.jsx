@@ -1,24 +1,32 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
+import * as CryptoJS from "crypto-js";
 
-const ALGORITHM = "aes-256-cbc";
-
-export const encrypt = (text, masterPassword) => {
-  const key = Buffer.from(masterPassword, "utf-8").slice(0, 32);
-  const iv = randomBytes(16);
-  const cipher = createCipheriv(ALGORITHM, key, iv);
-  let encrypted = cipher.update(text, "utf8", "base64");
-  encrypted += cipher.final("base64");
-  return encrypted;
+export const encrypt = (password, masterPassword) => {
+  return CryptoJS.AES.encrypt(
+    password,
+    CryptoJS.SHA256(masterPassword)
+      .toString(CryptoJS.enc.Base64)
+      .substring(0, 32)
+  ).toString();
 };
 
-export const decrypt = (encryptedText, masterPassword) => {
-  const key = Buffer.from(masterPassword, "utf-8").slice(0, 32);
-  const decipher = createDecipheriv(
-    ALGORITHM,
-    key,
-    Buffer.from(encryptedText, "base64")
+export const decrypt = (encryptedpassword, masterPassword) => {
+  const decrypted = CryptoJS.AES.decrypt(
+    encryptedpassword,
+    CryptoJS.SHA256(masterPassword)
+      .toString(CryptoJS.enc.Base64)
+      .substring(0, 32)
   );
-  let decrypted = decipher.update(encryptedText, "base64", "utf8");
-  decrypted += decipher.final("utf8");
-  return decrypted;
+  if (decrypted) {
+    try {
+      const str = decrypted.toString(CryptoJS.enc.Utf8);
+      if (str.length > 0) {
+        return str;
+      } else {
+        return "error 1";
+      }
+    } catch (e) {
+      return "error 2";
+    }
+  }
+  return "error 3";
 };

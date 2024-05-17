@@ -16,31 +16,27 @@ public class EmailService {
     @Autowired
     JavaMailSender emailSender;
 
-//    public void sendVerificationEmail(User user) throws Exception {
-//        String to = user.getUsername();
-//        String from = "skywingsairline2023@gmail.com";
-//
-//        MimeMessage message = emailSender.createMimeMessage();
-//        MimeMessageHelper helper = new MimeMessageHelper(message, true);
-//
-//        helper.setFrom(from);
-//        helper.setTo(to);
-//        helper.setSubject("Please verify your email");
-//
-//        String linkText = "Click here to verify your email";
-//        String verifyURL = "http://localhost:8080/api/v1/auth/verify-email?token=" + user.getVerificationToken();
-//
-//        String emailText = "Dear " + user.getUserName() + ",<br>" +
-//                "<br>" +
-//                "Thank you for registering. Please <a href=\"" + verifyURL + "\">" + linkText + "</a> to verify your email.<br>" +
-//                "<br>" +
-//                "Best Regards,<br>" +
-//                "The SkyWings Team";
-//
-//        helper.setText(emailText, true);
-//
-//        emailSender.send(message);
-//    }
+    public void sendVerificationEmail(User user) throws Exception {
+        String to = user.getUsername();
+        String from = "passwordManager@gmail.com";
+
+        MimeMessage message = emailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+        helper.setFrom(from);
+        helper.setTo(to);
+        helper.setSubject("Please verify your Login");
+
+        String emailText = "Hey " + user.getUserName() + "!<br><br>" +
+                "A sign in attempt requires further verification because we did not recognize your device. " +
+                "To complete the sign in, enter the verification code on the unrecognized device.<br><br>" +
+                "Verification code: " + user.getVerificationCode() + "<br><br>" ;
+
+
+        helper.setText(emailText, true);
+
+        emailSender.send(message);
+    }
 //
 //
 //    public void sendPasswordResetEmail(User user) throws Exception {

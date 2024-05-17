@@ -1,17 +1,39 @@
 package com.example.springboot.Model;
 
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
+
 
 public class User implements UserDetails {
+    private String userId;
+    private String userName;
+    private String password;
+    private int userType;
+    private int verificationCode;
+    private Timestamp verificationCodeTime;
 
-    String userId;
-    String userName;
-    String password;
-    int verification_code;
+    public Timestamp getVerificationCodeTime() {
+        return verificationCodeTime;
+    }
 
+    public void setVerificationCodeTime(Timestamp verificationCodeTime) {
+        this.verificationCodeTime = verificationCodeTime;
+    }
+
+    public int getVerificationCode() {
+        return verificationCode;
+    }
+
+    public void setVerificationCode(int verificationCode) {
+        this.verificationCode = verificationCode;
+    }
 
     public String getUserId() {
         return userId;
@@ -21,31 +43,36 @@ public class User implements UserDetails {
         this.userId = userId;
     }
 
+    public String getUserName() {
+        return userName;
+    }
+
     public void setUserName(String userName) {
         this.userName = userName;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public int getUserType() {
+        return userType;
     }
 
-    public int getVerification_code() {
-        return verification_code;
-    }
-
-    public void setVerification_code(int verification_code) {
-        this.verification_code = verification_code;
+    public void setUserType(int userType) {
+        this.userType = userType;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null;
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     @Override
     public String getPassword() {
         return password;
     }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
     @Override
     public String getUsername() {
         return userName;
@@ -68,6 +95,7 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return false;
+        return true;
     }
+
 }

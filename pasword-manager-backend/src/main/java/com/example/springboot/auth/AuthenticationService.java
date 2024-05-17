@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Service
@@ -48,15 +50,19 @@ public class AuthenticationService {
             );
         } catch (AuthenticationException e) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "Invalid username or password"
+                    HttpStatus.UNAUTHORIZED, "Invalid username or password"
             );
         }
 
         User user = userAccess.findUserByName(request.getUsername());
         var jwtToken = jwtService.generateToken(user);
 
+
         AuthenticationResponse response = new AuthenticationResponse();
         response.setToken(jwtToken);;
+        response.setEmail(user.getUserName());
+        response.setId(user.getUserId());
+        response.setMessage("Login Successfully");
         return response;
     }
 
@@ -84,57 +90,62 @@ public class AuthenticationService {
 
     }
 
-//    public boolean verifyToken(String token) {
-//        User user = userAccess.findUserByToken(token);
-//        if (user != null) {
-//            user.setEmailVerified(true);
-//            boolean success = userAccess.updateEmailVerificationStatus(user);
-//            if (!success) {
-//                throw new ResponseStatusException(
-//                        HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update email verification status."
-//                );
-//            }
-//            return true;
-//        } else {
-//            throw new ResponseStatusException(
-//                    HttpStatus.NOT_FOUND, "Invalid token."
-//            );
-//        }
-//    }
-//
-//
-//    public void createPasswordResetToken(String email) {
-//        User user = userAccess.findUserByName(email);
-//        if (user == null) {
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
-//        }
-//
-//        if (user.getPassword() == null) {
-//            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid User");
-//        }
-//
-//        String resetToken = UUID.randomUUID().toString();
-//        user.setVerificationToken(resetToken);
-//        user.setVerificationTokenTime(LocalDateTime.now());
-//
-//        userAccess.updateChangePassword(user);
-//        try {
-//            emailService.sendPasswordResetEmail(user);
-//        } catch (Exception e) {
-//            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error sending password reset email");
-//        }
-//    }
-//
-//    public void resetPassword(String email, String newPassword, String token) {
-//        User user = userAccess.findUserByResetTokenAndEmail(token, email);
-//        if (user == null) {
-//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid token or email");
-//        }
-//
-//
-//        String encodedPassword = passwordEncoder.encode(newPassword);
-//        user.setPassword(encodedPassword);
-//        user.setVerificationToken(null);
-//        userAccess.updatePassword(user);
-//    }
+    public boolean verifyToken(String token, String email) {
+
+        User user = userAccess.findUserByName(email);
+
+        if (user == null || !token.equals(String.valueOf(user.getVerificationCode()))) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid token or email.");
+        }
+
+        Timestamp verificationCodeTimestamp = user.getVerificationCodeTime();
+        if (verificationCodeTimestamp == null) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Verification time not set.");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime verificationCodeTime = verificationCodeTimestamp.toLocalDateTime();
+        if (ChronoUnit.MINUTES.between(verificationCodeTime, now) > 5) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token Has Expired.");
+        }
+
+        int rowsAffected = userAccess.deleteVerificationCode(email);
+        if (rowsAffected <= 0) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to update verification.");
+        }
+
+        return true;
+    }
+
+
+
+    public boolean createVerificationCode(String email) {
+        User user = userAccess.findUserByName(email);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+
+        if (user.getPassword() == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid User");
+        }
+
+        String verificationCode = IDGenerator.generateOTP();
+        user.setVerificationCode(Integer.valueOf(verificationCode));
+        user.setVerificationCodeTime(Timestamp.valueOf(LocalDateTime.now()));
+
+        int rowsAffected = userAccess.createVerificationCode(user.getUserName(), user.getVerificationCode(), user.getVerificationCodeTime());
+
+
+        if (rowsAffected > 0) {
+            try {
+                emailService.sendVerificationEmail(user);
+                return true;
+            } catch (Exception e) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error sending verification email");
+            }
+        } else {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create verification code in the database");
+        }
+    }
+
 }

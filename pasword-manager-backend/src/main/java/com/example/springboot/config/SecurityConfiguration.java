@@ -29,9 +29,7 @@ public class SecurityConfiguration {
                 .requestMatchers(
                         "/api/auth/**",
                         "/api/user/exist",
-                        "/api/passengers/**",
-                        "/api/email/**",
-                        "/api/pdf/**")
+                        "/api/email/**" )
                 .permitAll()
                 .anyRequest()
                 .authenticated()

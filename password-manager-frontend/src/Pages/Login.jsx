@@ -1,24 +1,21 @@
-import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
-import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import LoginOutlinedIcon from "@mui/icons-material/LoginOutlined";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
-import { IconButton, Snackbar, useTheme } from "@mui/material";
+import { IconButton } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
 import InputAdornment from "@mui/material/InputAdornment";
-import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-// import Cookies from "universal-cookie";
+import React, { useEffect, useState } from "react";
 
-// import { adminAuthenticate } from "../api";
+import Cookies from "universal-cookie";
+
+import { useNavigate } from "react-router-dom";
+import { login, register, userExist } from "../API";
 import Alert from "./Global/Alert";
-import { register, userExist } from "../API";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,10 +28,9 @@ const Login = () => {
   const [password, setPassword] = useState("");
 
   const [userExists, setUserExists] = useState(false);
+  const isButtonDisabled = username === "" || password === "";
 
-  //   const navigate = useNavigate();
-
-  //   const cookies = new Cookies();
+  const cookies = new Cookies();
 
   const handleShowPassword = () => {
     setShowPassword(true);
@@ -65,12 +61,32 @@ const Login = () => {
     fetchUserExistence();
   }, []);
 
+  const navigate = useNavigate();
+
   const handleLogin = async (e) => {
     e.preventDefault();
     const userCredentials = {
       username: username,
       password: password,
     };
+
+    try {
+      const response = await login(userCredentials);
+      cookies.set("user", response.token);
+      localStorage.setItem("email", response.email);
+      sessionStorage.setItem("mp", password);
+      setSnackbarMessage(response.message);
+      setSnackbarSeverity("success");
+      setOpenSnackbar(true);
+
+      setTimeout(() => {
+        navigate("/verification");
+      }, 3000);
+    } catch (error) {
+      setSnackbarMessage("Invalid Email or Password");
+      setSnackbarSeverity("error");
+      setOpenSnackbar(true);
+    }
   };
 
   const handleRegister = async (e) => {
@@ -81,43 +97,20 @@ const Login = () => {
     };
     try {
       const response = await register(userCredentials);
-      console.log(response);
       setSnackbarMessage(response);
       setSnackbarSeverity("success");
       setOpenSnackbar(true);
 
       setUsername("");
       setPassword("");
-      window.location.reload();
+      setTimeout(() => {
+        window.location.reload();
+      }, 5000);
     } catch (error) {
       setSnackbarMessage(error.data);
       setSnackbarSeverity("error");
       setOpenSnackbar(true);
     }
-  };
-
-  const handleSubmit = async (e) => {
-    //     e.preventDefault();
-    //     const loginCredentials = {
-    //       username: username,
-    //       password: password,
-    //     };
-    //     try {
-    //       const response = await adminAuthenticate(loginCredentials);
-    //       cookies.set("user", response.token, {
-    //         path: "/",
-    //       });
-    //       localStorage.setItem("id", response.id);
-    //       localStorage.setItem("role", response.role);
-    //       navigate("/admin/dashboard");
-    //       setSnackbarMessage("Admin Login Successfully");
-    //       setSnackbarSeverity("success");
-    //       setOpenSnackbar(true);
-    //     } catch (error) {
-    //       setSnackbarMessage("Invalid username or password");
-    //       setSnackbarSeverity("error");
-    //       setOpenSnackbar(true);
-    //     }
   };
 
   return (
@@ -194,6 +187,7 @@ const Login = () => {
               fullWidth
               onClick={handleLogin}
               variant="contained"
+              disabled={isButtonDisabled}
               sx={{
                 mt: 3,
                 mb: 2,
@@ -209,6 +203,7 @@ const Login = () => {
           ) : (
             <Button
               fullWidth
+              disabled={isButtonDisabled}
               onClick={handleRegister}
               variant="contained"
               sx={{

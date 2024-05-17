@@ -4,13 +4,20 @@ import java.util.Random;
 import java.util.UUID;
 
 public class IDGenerator {
-    private static final String CHAR_SET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private static final int ID_LENGTH = 7;
     private static Random random = new Random();
+    private static final int OTP_LENGTH = 6;
 
     public static String generateUUID() {
         UUID uuid = UUID.randomUUID();
         return uuid.toString();
     }
 
+    public static String generateOTP() {
+        StringBuilder otp = new StringBuilder(OTP_LENGTH);
+        for (int i = 0; i < OTP_LENGTH; i++) {
+            int digit = random.nextInt(10);
+            otp.append(digit);
+        }
+        return otp.toString();
+    }
 }

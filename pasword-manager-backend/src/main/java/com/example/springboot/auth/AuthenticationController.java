@@ -29,7 +29,6 @@ public class AuthenticationController {
             if (registrationSuccess) {
                 return ResponseEntity.ok("User registered successfully.");
             } else {
-                // Failed to register user
                 throw new ResponseStatusException(
                         HttpStatus.INTERNAL_SERVER_ERROR, "Failed to register user."
                 );
@@ -39,14 +38,30 @@ public class AuthenticationController {
         }
     }
 
-//    @GetMapping("/verify-email")
-//    public RedirectView verifyEmail(@RequestParam String token) {
-//        boolean isEmailVerified = authenticationService.verifyToken(token);
-//
-//        if (isEmailVerified) {
-//            return new RedirectView("http://localhost:3000/UserLogin");
-//        } else {
-//            return new RedirectView("http://localhost:3000/VerificationFailed");
-//        }
-//    }
+    @PostMapping("/verifyToken")
+    public ResponseEntity<String> verifyUser(@RequestParam String token, @RequestParam String email) {
+
+
+        boolean isUserVerified = authenticationService.verifyToken(token,email);
+
+        if (isUserVerified) {
+            return ResponseEntity.ok("User Verified successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("User Verified Unsuccessfully.");
+        }
+    }
+
+    @PostMapping("/verifyUser")
+    public ResponseEntity<String> createVerificationCode(@RequestParam String email) {
+        try {
+            boolean isCreated = authenticationService.createVerificationCode(email);
+            if (isCreated) {
+                return ResponseEntity.ok("Verification code created and email sent successfully.");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create verification code.");
+            }
+        } catch (ResponseStatusException ex) {
+            return ResponseEntity.status((HttpStatus) ex.getStatusCode()).body(ex.getReason());
+        }
+    }
 }

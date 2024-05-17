@@ -12,14 +12,15 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.logging.Logger;
 
 @Repository
 public class UserAccess {
 
     private static final String SEARCH_USER_USERNAME = "SELECT * FROM tbl_user WHERE name = ?";
-    private static final String INSERT_USER = "INSERT INTO tbl_user (id, name, password) VALUES (?, ?, ?) ";
-    private static final String INSERT_VERIFICATION_CODE = "UPDATE tbl_user SET verification_code = ? WHERE name = ?";
+    private static final String INSERT_USER = "INSERT INTO tbl_user (id, name, password) VALUES (?, ?, ?)";
+    private static final String INSERT_VERIFICATION_CODE = "UPDATE tbl_user SET verification_code = ?, verification_code_time = ? WHERE name = ?";
     private static final String COUNT_USER ="SELECT COUNT(*) FROM tbl_user";
     private static int rowsAffected = 0;
     private static final Logger LOGGER = Logger.getLogger(UserService.class.getName());
@@ -28,12 +29,11 @@ public class UserAccess {
 
     public User findUserByName(String username) {
         try {
-            User user  = jdbcTemplate.queryForObject(SEARCH_USER_USERNAME, new Object[]{username}, new UserRowMapper());
             return jdbcTemplate.queryForObject(SEARCH_USER_USERNAME, new Object[]{username}, new UserRowMapper());
 
         } catch (EmptyResultDataAccessException e) {
             LOGGER.severe("Error occurred while finding user: " + e.getMessage());
-            return null;
+               return null;
         }
     }
 
@@ -52,11 +52,11 @@ public class UserAccess {
 
     }
 
-    public int createVerificationCode(String username, int verificationCode) {
+    public int createVerificationCode(String username, int verificationCode, Timestamp verificationCodeTime) {
 
         if (username != null && verificationCode > 0) {
             try {
-                rowsAffected = jdbcTemplate.update(INSERT_VERIFICATION_CODE, verificationCode,username);
+                rowsAffected = jdbcTemplate.update(INSERT_VERIFICATION_CODE, verificationCode, verificationCodeTime,username);
                 return rowsAffected;
             } catch (EmptyResultDataAccessException e) {
                 return rowsAffected;
@@ -71,7 +71,7 @@ public class UserAccess {
 
         if (username != null) {
             try {
-                rowsAffected = jdbcTemplate.update(INSERT_VERIFICATION_CODE, 0,username);
+                rowsAffected = jdbcTemplate.update(INSERT_VERIFICATION_CODE, null,null,username);
                 return rowsAffected;
             } catch (EmptyResultDataAccessException e) {
                 return rowsAffected;
@@ -102,7 +102,8 @@ public class UserAccess {
             user.setUserId(rs.getString("id"));
             user.setUserName(rs.getString("name"));
             user.setPassword(rs.getString("password"));
-            user.setVerification_code(rs.getInt("verification_code"));
+            user.setVerificationCode(rs.getInt("verification_code"));
+            user.setVerificationCodeTime((rs.getTimestamp("verification_code_time")));
             return user;
         }
     }
