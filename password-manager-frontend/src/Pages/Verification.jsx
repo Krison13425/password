@@ -230,7 +230,7 @@ const VerificationPage = () => {
                   "&:hover": {
                     "& .MuiButton-endIcon": {
                       transform: `translateX(${iconPosition}px)`,
-                      transition: "transform 0.3s", // Transition added here
+                      transition: "transform 0.3s",
                     },
                   },
                 }}

@@ -18,7 +18,6 @@ function App() {
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
-
             <Route path="/verification" element={<VerificationPage />} />
             <Route element={<ProtectedRoutes />}>
               <Route path="/" element={<MainPage />} />

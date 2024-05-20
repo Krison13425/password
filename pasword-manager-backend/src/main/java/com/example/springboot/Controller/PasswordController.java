@@ -52,7 +52,7 @@ public class PasswordController {
         }
     }
 
-    @PostMapping("/edit")
+    @PutMapping("/edit")
     public ResponseEntity<String> editPassword(@RequestParam String id, @RequestParam String password) {
 
         try {
@@ -84,18 +84,5 @@ public class PasswordController {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
-
-//    @GetMapping("/filter")
-//    public List<Airplane> getFilteredAirplanes(
-//            @RequestParam(required = false) String status,
-//            @RequestParam(required = false) String location) {
-//        if ((status != null && !status.isBlank()) || (location != null && !location.isBlank())) {
-//            return airplaneService.getfilteredAirplaneList(status, location);
-//        } else {
-//            return airplaneService.getAllAirplanes();
-//        }
-//    }
-
-
 
 }

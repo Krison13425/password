@@ -14,10 +14,13 @@ public class IDGenerator {
 
     public static String generateOTP() {
         StringBuilder otp = new StringBuilder(OTP_LENGTH);
-        for (int i = 0; i < OTP_LENGTH; i++) {
+        int firstDigit = 1 + random.nextInt(9);
+        otp.append(firstDigit);
+        for (int i = 1; i < OTP_LENGTH; i++) {
             int digit = random.nextInt(10);
             otp.append(digit);
         }
         return otp.toString();
     }
+
 }

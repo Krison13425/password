@@ -1,20 +1,20 @@
-import VisibilityIcon from "@mui/icons-material/Visibility";
+import AppleIcon from "@mui/icons-material/Apple";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
-import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
-import InstagramIcon from "@mui/icons-material/Instagram";
-import FacebookRoundedIcon from "@mui/icons-material/FacebookRounded";
-import AppleIcon from "@mui/icons-material/Apple";
-import GoogleIcon from "@mui/icons-material/Google";
-import ShopRoundedIcon from "@mui/icons-material/ShopRounded";
-import PaymentRoundedIcon from "@mui/icons-material/PaymentRounded";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
+import FacebookRoundedIcon from "@mui/icons-material/FacebookRounded";
+import GoogleIcon from "@mui/icons-material/Google";
+import InstagramIcon from "@mui/icons-material/Instagram";
+import PaymentRoundedIcon from "@mui/icons-material/PaymentRounded";
+import ShopRoundedIcon from "@mui/icons-material/ShopRounded";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import SearchIcon from "@mui/icons-material/Search";
 
+import { useTheme } from "@emotion/react";
 import {
   Box,
-  Grid,
+  Button,
   IconButton,
   InputAdornment,
   Paper,
@@ -36,9 +36,8 @@ import {
 } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "./Slider.css";
-import { useTheme } from "@emotion/react";
 
-const Slider = ({ passwords, searchTerm }) => {
+const Slider = ({ passwords, searchTerm, tabValue, onButtonClick }) => {
   const theme = useTheme();
   const swiperRef = useRef(null);
   const isMobileSm = useMediaQuery(theme.breakpoints.down("sm"));
@@ -90,6 +89,10 @@ const Slider = ({ passwords, searchTerm }) => {
     setCurrentIndex(swiper.realIndex);
   };
 
+  const handleButtonClick = (id) => {
+    onButtonClick(id);
+  };
+
   useEffect(() => {
     flipBack();
   }, [currentIndex]);
@@ -122,7 +125,6 @@ const Slider = ({ passwords, searchTerm }) => {
     paperHeight = 500;
     paperWidth = 400;
   }
-
   const iconStyles = (isActive) => ({
     position: "absolute",
     top: "50%",
@@ -131,7 +133,10 @@ const Slider = ({ passwords, searchTerm }) => {
     cursor: isActive ? "pointer" : "grab",
     color: "#000",
     transition: "color 0.3s",
-    color: theme.palette.primary.dark,
+    color:
+      theme.palette.mode === "dark"
+        ? theme.palette.primary.light
+        : theme.palette.primary.dark,
     fontSize: iconSize,
   });
 
@@ -225,6 +230,23 @@ const Slider = ({ passwords, searchTerm }) => {
                               sx={iconStyles(isActive)}
                             />
                           );
+                        case lowercaseAccountName.includes("lazada") ||
+                          lowercaseAccountName.includes("shopee") ||
+                          lowercaseAccountName.includes("lz") ||
+                          lowercaseAccountName.includes("sp"):
+                          return (
+                            <ShopRoundedIcon
+                              onClick={() => flipCard(index)}
+                              sx={iconStyles(isActive)}
+                            />
+                          );
+                        case lowercaseAccountName.includes("bank"):
+                          return (
+                            <PaymentRoundedIcon
+                              onClick={() => flipCard(index)}
+                              sx={iconStyles(isActive)}
+                            />
+                          );
                         default:
                           return (
                             <EmailRoundedIcon
@@ -247,24 +269,66 @@ const Slider = ({ passwords, searchTerm }) => {
                       {password.accountName}
                     </Typography>
                     {index === currentIndex && (
-                      <Tooltip title="View Password" arrow>
-                        <VisibilityIcon
-                          onClick={() => flipCard(index)}
-                          sx={{
-                            position: "absolute",
-                            bottom: 0,
-                            left: "50%",
-                            transform: "translateX(-50%)",
-                            marginBottom: "16px",
-                            fontSize: "1.5rem",
-                            cursor: "pointer",
-                            transition: "color 0.3s",
-                            "&:hover": {
-                              color: theme.palette.primary.dark,
-                            },
-                          }}
-                        />
-                      </Tooltip>
+                      <>
+                        {tabValue === 1 ? (
+                          <Tooltip title="View Password" arrow>
+                            <VisibilityIcon
+                              onClick={() => flipCard(index)}
+                              sx={{
+                                position: "absolute",
+                                bottom: 0,
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                marginBottom: "16px",
+                                fontSize: "1.5rem",
+                                cursor: "pointer",
+                                transition: "color 0.3s",
+                                "&:hover": {
+                                  color: theme.palette.primary.dark,
+                                },
+                              }}
+                            />
+                          </Tooltip>
+                        ) : (
+                          <Button
+                            onClick={() => handleButtonClick(password.id)}
+                            variant="outlined"
+                            sx={{
+                              position: "absolute",
+                              bottom: 0,
+                              left: "50%",
+                              transform: "translateX(-50%)",
+                              marginBottom: "16px",
+                              borderRadius: "50px",
+                              overflow: "hidden",
+                              color:
+                                theme.palette.mode === "dark"
+                                  ? theme.palette.primary.light
+                                  : theme.palette.primary.main,
+                              "&:hover::before": {
+                                width: "100%",
+                              },
+                              "&::before": {
+                                content: '""',
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                height: "100%",
+                                width: 0,
+                                backgroundColor: theme.palette.primary.main,
+                                transition: "width 0.3s ease",
+                                zIndex: -1,
+                              },
+                              "&:hover": {
+                                color: "white",
+                              },
+                            }}
+                            size="large"
+                          >
+                            change password
+                          </Button>
+                        )}
+                      </>
                     )}
                   </Paper>
                 </div>

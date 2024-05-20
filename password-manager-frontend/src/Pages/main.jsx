@@ -13,14 +13,21 @@ import {
   TextField,
   Typography,
   Paper,
+  Grid,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import Slider from "./Slide";
 import { Cookies } from "react-cookie";
-import { getPassword } from "../API";
+import {
+  changePassword,
+  createPassword,
+  getPassword,
+  getPasswordById,
+} from "../API";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { decrypt, encrypt } from "./encrytion";
+import Dialog from "./Global/Dailog";
 
 const MainPage = () => {
   const [passwordDetails, setPasswordDetails] = useState({
@@ -28,18 +35,37 @@ const MainPage = () => {
     passwordEmail: "",
     password: "",
   });
-  const [searchTerm, setSearchTerm] = useState("");
-  const [passwords, setPasswords] = useState([]);
+  const [openDialog, setOpenDialog] = useState(false);
+  const handleOpen = () => setOpenDialog(true);
+  const handleClose = () => {
+    setOpenDialog(false);
+  };
+  const handleOpenDialog = (id) => {
+    setOpenDialog(true);
+    fetchSelectedPassword();
+  };
 
   const [value, setValue] = useState(0);
-
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
-
   const [passwordVisibility, setPasswordVisibility] = useState(false);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [passwords, setPasswords] = useState([]);
+  const [selectedPassword, setSelectedPassword] = useState("");
+  const [originalPassword, setOriginalPassword] = useState("");
+
   const navigate = useNavigate();
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
+
+    setSelectedPassword((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
 
   const handleChange = (event, newValue) => {
     setValue(newValue);
@@ -48,6 +74,9 @@ const MainPage = () => {
   const handleTogglePasswordVisibility = () => {
     setPasswordVisibility((prev) => !prev);
   };
+
+  const hasChanges =
+    JSON.stringify(selectedPassword) !== JSON.stringify(originalPassword);
 
   useEffect(() => {
     const cookies = new Cookies();
@@ -62,17 +91,10 @@ const MainPage = () => {
       }
     };
 
-    const fetchPasswords = async () => {
-      try {
-        const passwords = await getPassword();
-        setPasswords(passwords);
-      } catch (error) {
-        console.error("Error fetching passwords:", error);
-      }
-    };
-
     if (!isTokenExpired(token)) {
-      fetchPasswords();
+      if (value === 1) {
+        fetchAndDecryptPasswords();
+      }
     } else {
       cookies.remove("user");
       localStorage.removeItem("email");
@@ -81,6 +103,37 @@ const MainPage = () => {
       navigate("/login");
     }
   }, [value]);
+
+  const fetchSelectedPassword = async (id) => {
+    const password = await getPasswordById(id);
+    const masterPassword = sessionStorage.getItem("mp");
+    if (!masterPassword) {
+      throw new Error("Master password not found in session storage.");
+    }
+    const decryptedPasswords = password.map((password) => ({
+      ...password,
+      password: decrypt(password.password, masterPassword),
+    }));
+    setSelectedPassword(decryptedPasswords);
+    setOriginalPassword(decryptedPasswords);
+  };
+
+  const fetchAndDecryptPasswords = async () => {
+    try {
+      const encryptedPasswords = await getPassword();
+      const masterPassword = sessionStorage.getItem("mp");
+      if (!masterPassword) {
+        throw new Error("Master password not found in session storage.");
+      }
+      const decryptedPasswords = encryptedPasswords.map((password) => ({
+        ...password,
+        password: decrypt(password.password, masterPassword),
+      }));
+      setPasswords(decryptedPasswords);
+    } catch (error) {
+      console.error("Error fetching and decrypting passwords:", error);
+    }
+  };
 
   const handleCreatePassword = async () => {
     const encryptedPassword = encrypt(
@@ -94,21 +147,37 @@ const MainPage = () => {
       password: encryptedPassword,
     };
 
-    // try {
-    //   const response = await createPasswordResetToken(email);
+    try {
+      const response = await createPassword(passwords);
+      setSnackbarMessage(response);
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+    } catch (error) {
+      setSnackbarMessage(error.message);
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
 
-    //   setSnackbarMessage(
-    //     "A verification Email has been sent to your email. Please verify your email for resetting the password."
-    //   );
-    //   setSnackbarSeverity("success");
-    //   setSnackbarOpen(true);
-    // } catch (error) {
-    //   console.error(error);
+  const handleChangePassword = async () => {
+    const encryptedPassword = encrypt(
+      selectedPassword.password,
+      sessionStorage.getItem("mp")
+    );
 
-    //   setSnackbarMessage(error.message);
-    //   setSnackbarSeverity("error");
-    //   setSnackbarOpen(true);
-    // }
+    try {
+      const response = await changePassword(
+        selectedPassword.id,
+        encryptedPassword
+      );
+      setSnackbarMessage(response);
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+    } catch (error) {
+      setSnackbarMessage(error.message);
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
   };
 
   return (
@@ -265,10 +334,102 @@ const MainPage = () => {
               }}
             />
             <Box>
-              <Slider passwords={passwords} searchTerm={searchTerm} />
+              <Slider
+                passwords={passwords}
+                searchTerm={searchTerm}
+                tabValue={1}
+              />
             </Box>
           </TabPanel>
-          <TabPanel value={value} index={2}></TabPanel>
+          <TabPanel value={value} index={2} tabValue={2}>
+            <Typography variant="h1">Change Password</Typography>
+            <Slider
+              passwords={passwords}
+              searchTerm={searchTerm}
+              tabValue={2}
+              onButtonClick={handleOpenDialog}
+            />
+
+            <Dialog
+              open={openDialog}
+              handleClose={handleClose}
+              title="Update Password"
+              onSubmit={handleChangePassword}
+            >
+              <Box sx={{ textAlign: "center" }}>
+                <Box sx={{ marginBottom: "20px" }}>
+                  <TextField
+                    id="accountName"
+                    label="Account Name"
+                    fullWidth
+                    value={selectedPassword ? selectedPassword.accountName : ""}
+                    sx={{
+                      width: "70%",
+                      "& .MuiOutlinedInput-root": { borderRadius: "25px" },
+                    }}
+                    disabled
+                  />
+                </Box>
+
+                <Box sx={{ marginBottom: "20px" }}>
+                  <TextField
+                    id="email"
+                    label="Email"
+                    fullWidth
+                    value={selectedPassword ? selectedPassword.email : ""}
+                    sx={{
+                      width: "70%",
+                      "& .MuiOutlinedInput-root": { borderRadius: "25px" },
+                    }}
+                    disabled
+                  />
+                </Box>
+
+                <Box sx={{ marginBottom: "20px" }}>
+                  <TextField
+                    id="password"
+                    name="password"
+                    label="Password"
+                    type={passwordVisibility ? "text" : "password"}
+                    fullWidth
+                    onChange={handleInputChange}
+                    value={selectedPassword ? selectedPassword.password : ""}
+                    sx={{
+                      width: "70%",
+                      "& .MuiOutlinedInput-root": { borderRadius: "25px" },
+                    }}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={handleTogglePasswordVisibility}
+                            edge="end"
+                            aria-label="toggle password visibility"
+                          >
+                            {passwordVisibility ? (
+                              <VisibilityOffIcon />
+                            ) : (
+                              <VisibilityIcon />
+                            )}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={!hasChanges}
+                >
+                  update
+                </Button>
+              </Box>
+            </Dialog>
+          </TabPanel>
         </Box>
       </Box>
 
