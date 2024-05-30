@@ -1,7 +1,9 @@
 import AppleIcon from "@mui/icons-material/Apple";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import ArrowForwardIosRoundedIcon from "@mui/icons-material/ArrowForwardIosRounded";
+import ClearRoundedIcon from "@mui/icons-material/ClearRounded";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import EmailRoundedIcon from "@mui/icons-material/EmailRounded";
 import FacebookRoundedIcon from "@mui/icons-material/FacebookRounded";
 import GoogleIcon from "@mui/icons-material/Google";
@@ -15,6 +17,7 @@ import { useTheme } from "@emotion/react";
 import {
   Box,
   Button,
+  Fade,
   IconButton,
   InputAdornment,
   Paper,
@@ -37,7 +40,13 @@ import {
 import { Swiper, SwiperSlide } from "swiper/react";
 import "./Slider.css";
 
-const Slider = ({ passwords, searchTerm, tabValue, onButtonClick }) => {
+const Slider = ({
+  passwords,
+  searchTerm,
+  tabValue,
+  onChangePasswordClick,
+  onClearClick,
+}) => {
   const theme = useTheme();
   const swiperRef = useRef(null);
   const isMobileSm = useMediaQuery(theme.breakpoints.down("sm"));
@@ -89,8 +98,12 @@ const Slider = ({ passwords, searchTerm, tabValue, onButtonClick }) => {
     setCurrentIndex(swiper.realIndex);
   };
 
-  const handleButtonClick = (id) => {
-    onButtonClick(id);
+  const handleChangePasswordClick = (id) => {
+    onChangePasswordClick(id);
+  };
+
+  const handleClearClick = (id) => {
+    onClearClick(id);
   };
 
   useEffect(() => {
@@ -139,7 +152,6 @@ const Slider = ({ passwords, searchTerm, tabValue, onButtonClick }) => {
         : theme.palette.primary.dark,
     fontSize: iconSize,
   });
-
   return (
     <>
       <Box position="relative">
@@ -184,6 +196,37 @@ const Slider = ({ passwords, searchTerm, tabValue, onButtonClick }) => {
                       marginX: "auto",
                     }}
                   >
+                    {index === currentIndex && (
+                      <>
+                        {tabValue === 2 && (
+                          <Tooltip
+                            title="Delete Password"
+                            sx={{
+                              "& .MuiTooltip-tooltip": {
+                                fontSize: "1.5rem",
+                              },
+                            }}
+                            TransitionComponent={Fade}
+                            TransitionProps={{ timeout: 600 }}
+                            arrow
+                          >
+                            <IconButton
+                              sx={{
+                                position: "absolute",
+                                top: "8px",
+                                right: "8px",
+                                color: theme.palette.error.main,
+                                fontSize: "3rem",
+                              }}
+                              onClick={() => handleClearClick(password.id)}
+                            >
+                              <ClearRoundedIcon fontSize="inherit" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </>
+                    )}
+
                     {(() => {
                       const lowercaseEmail = password.email.toLowerCase();
                       const lowercaseAccountName =
@@ -291,7 +334,9 @@ const Slider = ({ passwords, searchTerm, tabValue, onButtonClick }) => {
                           </Tooltip>
                         ) : (
                           <Button
-                            onClick={() => handleButtonClick(password.id)}
+                            onClick={() =>
+                              handleChangePasswordClick(password.id)
+                            }
                             variant="outlined"
                             sx={{
                               position: "absolute",
@@ -322,8 +367,13 @@ const Slider = ({ passwords, searchTerm, tabValue, onButtonClick }) => {
                               "&:hover": {
                                 color: "white",
                               },
+                              "& .MuiButton-endIcon": {
+                                zIndex: 2,
+                                transition: "transform 0.3s",
+                              },
                             }}
                             size="large"
+                            endIcon={<EditRoundedIcon />}
                           >
                             change password
                           </Button>

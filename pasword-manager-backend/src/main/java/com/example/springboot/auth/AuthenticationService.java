@@ -67,11 +67,11 @@ public class AuthenticationService {
     }
 
     public Boolean registerUser(AuthenticationRequest request) {
-        User existingUser = userAccess.findUserByName(request.getUsername());
+        boolean existingUser = userAccess.isTableEmpty();
 
-        if (existingUser != null) {
+        if (existingUser) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "User with this email already exists."
+                    HttpStatus.BAD_REQUEST, "Only One User Can Exits"
             );
         }
 
@@ -95,7 +95,7 @@ public class AuthenticationService {
         User user = userAccess.findUserByName(email);
 
         if (user == null || !token.equals(String.valueOf(user.getVerificationCode()))) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid token or email.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid code or email.");
         }
 
         Timestamp verificationCodeTimestamp = user.getVerificationCodeTime();
@@ -106,7 +106,7 @@ public class AuthenticationService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime verificationCodeTime = verificationCodeTimestamp.toLocalDateTime();
         if (ChronoUnit.MINUTES.between(verificationCodeTime, now) > 5) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token Has Expired.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification Code Has Expired.");
         }
 
         int rowsAffected = userAccess.deleteVerificationCode(email);
@@ -119,7 +119,7 @@ public class AuthenticationService {
 
 
 
-    public boolean createVerificationCode(String email) {
+    public boolean createVerificationCode(String email, int isResend) {
         User user = userAccess.findUserByName(email);
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
@@ -136,15 +136,24 @@ public class AuthenticationService {
         int rowsAffected = userAccess.createVerificationCode(user.getUserName(), user.getVerificationCode(), user.getVerificationCodeTime());
 
 
-        if (rowsAffected > 0) {
+        if (rowsAffected > 0 && isResend == 1) {
             try {
                 emailService.sendVerificationEmail(user);
                 return true;
             } catch (Exception e) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error sending verification email");
             }
-        } else {
+        } else if (rowsAffected > 0 && isResend == 0){
+            try {
+                emailService.sendVerificationEmail(user);
+                return true;
+            } catch (Exception e) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error sending verification email");
+            }
+
+        }else{
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to create verification code in the database");
+
         }
     }
 

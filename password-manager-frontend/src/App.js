@@ -5,7 +5,7 @@ import ProtectedRoutes from "./Pages/Global/ProtectedRoutes";
 import Login from "./Pages/Login";
 import VerificationPage from "./Pages/Verification";
 import { ColorModeContext, useMode } from "./theme";
-import MainPage from "./Pages/Main";
+import MainPage from "./Pages/MainPage";
 
 function App() {
   const [theme, colorMode] = useMode();

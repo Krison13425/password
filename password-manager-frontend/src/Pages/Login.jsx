@@ -81,7 +81,7 @@ const Login = () => {
 
       setTimeout(() => {
         navigate("/verification");
-      }, 3000);
+      }, 1000);
     } catch (error) {
       setSnackbarMessage("Invalid Email or Password");
       setSnackbarSeverity("error");
@@ -105,7 +105,7 @@ const Login = () => {
       setPassword("");
       setTimeout(() => {
         window.location.reload();
-      }, 5000);
+      }, 2000);
     } catch (error) {
       setSnackbarMessage(error.data);
       setSnackbarSeverity("error");

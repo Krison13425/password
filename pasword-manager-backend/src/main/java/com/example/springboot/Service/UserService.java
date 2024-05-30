@@ -2,7 +2,6 @@ package com.example.springboot.Service;
 
 
 import com.example.springboot.Access.UserAccess;
-import com.example.springboot.Model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;

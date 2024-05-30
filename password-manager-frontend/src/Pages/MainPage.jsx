@@ -1,6 +1,7 @@
+import { useTheme } from "@emotion/react";
+import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import SearchIcon from "@mui/icons-material/Search";
 import {
   Alert,
   Box,
@@ -12,22 +13,21 @@ import {
   Tabs,
   TextField,
   Typography,
-  Paper,
-  Grid,
 } from "@mui/material";
+import { jwtDecode } from "jwt-decode";
 import React, { useEffect, useState } from "react";
-import Slider from "./Slide";
 import { Cookies } from "react-cookie";
+import { useNavigate } from "react-router-dom";
 import {
   changePassword,
   createPassword,
+  deletePassword,
   getPassword,
   getPasswordById,
 } from "../API";
-import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
-import { decrypt, encrypt } from "./encrytion";
 import Dialog from "./Global/Dailog";
+import Slider from "./Slide";
+import { decrypt, encrypt } from "./encrytion";
 
 const MainPage = () => {
   const [passwordDetails, setPasswordDetails] = useState({
@@ -36,13 +36,21 @@ const MainPage = () => {
     password: "",
   });
   const [openDialog, setOpenDialog] = useState(false);
-  const handleOpen = () => setOpenDialog(true);
   const handleClose = () => {
     setOpenDialog(false);
   };
   const handleOpenDialog = (id) => {
     setOpenDialog(true);
-    fetchSelectedPassword();
+    fetchSelectedPassword(id);
+  };
+
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const handleDeleteClose = () => {
+    setOpenDeleteDialog(false);
+  };
+  const handleOpenDeleteDialog = (id) => {
+    setOpenDeleteDialog(true);
+    fetchSelectedPassword(id);
   };
 
   const [value, setValue] = useState(0);
@@ -57,6 +65,7 @@ const MainPage = () => {
   const [originalPassword, setOriginalPassword] = useState("");
 
   const navigate = useNavigate();
+  const theme = useTheme();
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -75,13 +84,21 @@ const MainPage = () => {
     setPasswordVisibility((prev) => !prev);
   };
 
+  const resetForm = () => {
+    setPasswordDetails({
+      passwordName: "",
+      passwordEmail: "",
+      password: "",
+    });
+  };
+
   const hasChanges =
     JSON.stringify(selectedPassword) !== JSON.stringify(originalPassword);
 
   useEffect(() => {
     const cookies = new Cookies();
     const token = cookies.get("user");
-
+    resetForm();
     const isTokenExpired = (token) => {
       try {
         const decoded = jwtDecode(token);
@@ -92,7 +109,7 @@ const MainPage = () => {
     };
 
     if (!isTokenExpired(token)) {
-      if (value === 1) {
+      if (value !== 0) {
         fetchAndDecryptPasswords();
       }
     } else {
@@ -105,17 +122,19 @@ const MainPage = () => {
   }, [value]);
 
   const fetchSelectedPassword = async (id) => {
-    const password = await getPasswordById(id);
+    const encryptedPassword = await getPasswordById(id);
     const masterPassword = sessionStorage.getItem("mp");
     if (!masterPassword) {
       throw new Error("Master password not found in session storage.");
     }
-    const decryptedPasswords = password.map((password) => ({
-      ...password,
-      password: decrypt(password.password, masterPassword),
-    }));
-    setSelectedPassword(decryptedPasswords);
-    setOriginalPassword(decryptedPasswords);
+
+    const decryptedPassword = {
+      ...encryptedPassword,
+      password: decrypt(encryptedPassword.password, masterPassword),
+    };
+
+    setSelectedPassword(decryptedPassword);
+    setOriginalPassword(decryptedPassword);
   };
 
   const fetchAndDecryptPasswords = async () => {
@@ -135,23 +154,55 @@ const MainPage = () => {
     }
   };
 
-  const handleCreatePassword = async () => {
+  const handleCreatePassword = async (e) => {
+    e.preventDefault();
+
     const encryptedPassword = encrypt(
       passwordDetails.password,
       sessionStorage.getItem("mp")
     );
 
-    const passwords = {
-      name: passwordDetails.passwordName,
+    const password = {
       email: passwordDetails.passwordEmail,
+      password: encryptedPassword,
+      accountName: passwordDetails.passwordName,
+    };
+
+    try {
+      const response = await createPassword(password);
+      setSnackbarMessage(response);
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+      resetForm();
+    } catch (error) {
+      setSnackbarMessage(error);
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    handleClose();
+
+    const encryptedPassword = encrypt(
+      selectedPassword.password,
+      sessionStorage.getItem("mp")
+    );
+
+    const updatedPassword = {
+      id: selectedPassword.id,
       password: encryptedPassword,
     };
 
     try {
-      const response = await createPassword(passwords);
+      const response = await changePassword(updatedPassword);
       setSnackbarMessage(response);
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
+      fetchAndDecryptPasswords();
+      setSelectedPassword("");
+      setOriginalPassword("");
     } catch (error) {
       setSnackbarMessage(error.message);
       setSnackbarSeverity("error");
@@ -159,20 +210,18 @@ const MainPage = () => {
     }
   };
 
-  const handleChangePassword = async () => {
-    const encryptedPassword = encrypt(
-      selectedPassword.password,
-      sessionStorage.getItem("mp")
-    );
+  const handleDeletePassword = async (e) => {
+    e.preventDefault();
+    handleDeleteClose();
 
     try {
-      const response = await changePassword(
-        selectedPassword.id,
-        encryptedPassword
-      );
+      const response = await deletePassword(selectedPassword.id);
       setSnackbarMessage(response);
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
+      fetchAndDecryptPasswords();
+      setSelectedPassword("");
+      setOriginalPassword("");
     } catch (error) {
       setSnackbarMessage(error.message);
       setSnackbarSeverity("error");
@@ -226,6 +275,7 @@ const MainPage = () => {
               <TextField
                 id="name"
                 label="Password Name"
+                value={passwordDetails.passwordName}
                 sx={{
                   mt: 2,
                   "& .MuiOutlinedInput-root": { borderRadius: "25px" },
@@ -236,7 +286,7 @@ const MainPage = () => {
                 onChange={(event) => {
                   setPasswordDetails({
                     ...passwordDetails,
-                    passwordEmail: event.target.value,
+                    passwordName: event.target.value,
                   });
                 }}
               />
@@ -248,6 +298,7 @@ const MainPage = () => {
                   mt: 2,
                   "& .MuiOutlinedInput-root": { borderRadius: "25px" },
                 }}
+                value={passwordDetails.passwordEmail}
                 variant="outlined"
                 fullWidth
                 margin="normal"
@@ -263,6 +314,7 @@ const MainPage = () => {
                 id="password"
                 label="Password"
                 type={passwordVisibility ? "text" : "password"}
+                value={passwordDetails.password}
                 sx={{
                   mt: 2,
                   "& .MuiOutlinedInput-root": { borderRadius: "25px" },
@@ -304,6 +356,9 @@ const MainPage = () => {
                     borderRadius: "20px",
                     fontSize: "1rem",
                   }}
+                  disabled={Object.values(passwordDetails).some(
+                    (value) => value === ""
+                  )}
                 >
                   Create
                 </Button>
@@ -342,12 +397,15 @@ const MainPage = () => {
             </Box>
           </TabPanel>
           <TabPanel value={value} index={2} tabValue={2}>
-            <Typography variant="h1">Change Password</Typography>
+            <Typography variant="h1" sx={{ mb: 8 }}>
+              Change Password
+            </Typography>
             <Slider
               passwords={passwords}
               searchTerm={searchTerm}
               tabValue={2}
-              onButtonClick={handleOpenDialog}
+              onChangePasswordClick={handleOpenDialog}
+              onClearClick={handleOpenDeleteDialog}
             />
 
             <Dialog
@@ -424,8 +482,39 @@ const MainPage = () => {
                   type="submit"
                   variant="contained"
                   disabled={!hasChanges}
+                  sx={{
+                    borderRadius: "20px",
+                  }}
                 >
                   update
+                </Button>
+              </Box>
+            </Dialog>
+
+            <Dialog
+              open={openDeleteDialog}
+              handleClose={handleDeleteClose}
+              title="Confirm Delete Password"
+              onSubmit={handleDeletePassword}
+            >
+              <Box sx={{ textAlign: "center", marginTop: "16px" }}>
+                <Typography variant="h5" sx={{ marginBottom: "8px" }}>
+                  Do you really want to remove this password?
+                </Typography>
+                <Typography variant="h5" sx={{ marginBottom: "8px" }}>
+                  This action cannot be undone.
+                </Typography>
+              </Box>
+
+              <Box sx={{ mt: 5, display: "flex", justifyContent: "center" }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  sx={{
+                    borderRadius: "20px",
+                  }}
+                >
+                  Confirm
                 </Button>
               </Box>
             </Dialog>

@@ -54,7 +54,7 @@ public class AuthenticationController {
     @PostMapping("/verifyUser")
     public ResponseEntity<String> createVerificationCode(@RequestParam String email) {
         try {
-            boolean isCreated = authenticationService.createVerificationCode(email);
+            boolean isCreated = authenticationService.createVerificationCode(email,0);
             if (isCreated) {
                 return ResponseEntity.ok("Verification code created and email sent successfully.");
             } else {
@@ -64,4 +64,19 @@ public class AuthenticationController {
             return ResponseEntity.status((HttpStatus) ex.getStatusCode()).body(ex.getReason());
         }
     }
+
+    @PostMapping("/resendVerification")
+    public ResponseEntity<String> resendVerificationCode(@RequestParam String email) {
+        try {
+            boolean isCreated = authenticationService.createVerificationCode(email, 1);
+            if (isCreated) {
+                return ResponseEntity.ok("Verification code has resend successfully.");
+            } else {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to resend verification code.");
+            }
+        } catch (ResponseStatusException ex) {
+            return ResponseEntity.status((HttpStatus) ex.getStatusCode()).body(ex.getReason());
+        }
+    }
+
 }

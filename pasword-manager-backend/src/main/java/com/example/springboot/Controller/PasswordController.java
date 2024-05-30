@@ -2,6 +2,7 @@ package com.example.springboot.Controller;
 
 import com.example.springboot.Model.Password;
 import com.example.springboot.Model.PasswordRequestBody;
+import com.example.springboot.Model.UpdatePasswordRequestBody;
 import com.example.springboot.Service.PasswordServiceInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,9 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/password")
@@ -53,21 +52,20 @@ public class PasswordController {
     }
 
     @PutMapping("/edit")
-    public ResponseEntity<String> editPassword(@RequestParam String id, @RequestParam String password) {
-
+    public ResponseEntity<String> editPassword(@RequestBody UpdatePasswordRequestBody updatePasswordRequestBody) {
         try {
-            boolean isEdited = passwordService.updatePassword(id,password);
+            boolean isEdited = passwordService.updatePassword(updatePasswordRequestBody);
 
             if (isEdited) {
                 return new ResponseEntity<>("Password edited successfully.", HttpStatus.CREATED);
             } else {
                 return new ResponseEntity<>("Unable to edit password.", HttpStatus.INTERNAL_SERVER_ERROR);
             }
-
         } catch (IllegalArgumentException ex) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deletePasswordById(@PathVariable String id) {

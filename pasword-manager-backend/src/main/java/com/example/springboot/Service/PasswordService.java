@@ -4,6 +4,7 @@ package com.example.springboot.Service;
 import com.example.springboot.Access.PasswordAccess;
 import com.example.springboot.Model.Password;
 import com.example.springboot.Model.PasswordRequestBody;
+import com.example.springboot.Model.UpdatePasswordRequestBody;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,6 +36,12 @@ public class PasswordService implements PasswordServiceInterface {
 
         if(passwordRequestBody != null){
 
+            Password existingPassword = passwordAccess.getPasswordByEmail(passwordRequestBody.getEmail());
+
+            if (existingPassword != null) {
+                throw new IllegalArgumentException("Email already exists");
+            }
+
             Password password = new Password();
 
             password.setId(IDGenerator.generateUUID());
@@ -56,15 +63,15 @@ public class PasswordService implements PasswordServiceInterface {
     }
 
     @Override
-    public boolean updatePassword(String id, String password) {
+    public boolean updatePassword(UpdatePasswordRequestBody updatePasswordRequestBody) {
 
-        Password originPassword = passwordAccess.getPasswordById(id);
+        Password originPassword = passwordAccess.getPasswordById(updatePasswordRequestBody.getId());
 
         if(originPassword != null){
 
-            if(!matchPassword(password,originPassword.getPassword())){
+            if(!matchPassword(updatePasswordRequestBody.getPassword(),originPassword.getPassword())){
 
-                int rowsAffected =  passwordAccess.updatePassword(id,password);
+                int rowsAffected =  passwordAccess.updatePassword(updatePasswordRequestBody.getId(),updatePasswordRequestBody.getPassword());
 
                 if (rowsAffected > 0) {
                     return true;

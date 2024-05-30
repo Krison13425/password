@@ -1,14 +1,12 @@
 package com.example.springboot.Service;
 
 import com.example.springboot.Model.User;
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-
-import java.io.File;
-import java.io.FileOutputStream;
 
 @Service
 public class EmailService {
@@ -25,13 +23,43 @@ public class EmailService {
 
         helper.setFrom(from);
         helper.setTo(to);
-        helper.setSubject("Please verify your Login");
+        helper.setSubject("Important: Verify Your Login for Password Manager");
+
+        String emailText = "Dear " + user.getUsername() +",<br><br>" +
+                "We recently detected a sign-in attempt from an unrecognized device for your Password Manager account. " +
+                "To ensure the security of your account, we require verification before completing the login process.<br><br>" +
+                "Please use the following verification code to complete your login on the unrecognized device:<br><br>" +
+                "Verification Code: " + user.getVerificationCode() + "<br><br>" +
+                "This code will expire in 5 minutes. If you did not attempt to sign in from a new device, " +
+                "you can safely disregard this email.<br><br>" +
+                "For your security, we recommend you never share your verification code with anyone.<br><br>" +
+                "Sincerely,<br><br>" +
+                "The Password Manager Team";
+
+        helper.setText(emailText, true);
+
+        emailSender.send(message);
+    }
+
+
+    public void resendVerificationEmail(User user) throws Exception {
+        String to = user.getUsername();
+        String from = "passwordManager@gmail.com";
+
+        MimeMessage message = emailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+        helper.setFrom(from);
+        helper.setTo(to);
+
+        helper.setSubject("New Verification Code for Your Login");
 
         String emailText = "Hey " + user.getUserName() + "!<br><br>" +
-                "A sign in attempt requires further verification because we did not recognize your device. " +
-                "To complete the sign in, enter the verification code on the unrecognized device.<br><br>" +
-                "Verification code: " + user.getVerificationCode() + "<br><br>" ;
-
+                "We recently received a request to resend your verification code. " +
+                "If you requested this, please use the code below to complete your login.<br><br>" +
+                "New Verification Code: " + user.getVerificationCode() + "<br><br>" +
+                "This code will expire in 5 minutes. " +
+                "If you didn't request a new code, you can safely ignore this email.<br><br>";
 
         helper.setText(emailText, true);
 
