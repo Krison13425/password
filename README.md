@@ -7,6 +7,7 @@ This project is a password manager application built using Spring Boot, ReactJS,
 - **Cross-Platform Desktop Application**: Built with Electron for compatibility across Windows, macOS, and Linux.
 - **Frontend**: Developed with ReactJS and styled using Material-UI (MUI) for a modern and responsive user interface.
 - **Backend**: Powered by Spring Boot to handle server-side operations.
+- **Database**: Utilizes SQLite for lightweight and efficient data storage.
 - **Email OTP Verification**: Implements SMTP email service for sending OTP (One-Time Password) for user verification.
 - **JWT Authentication**: Utilizes Spring Security for managing JSON Web Tokens (JWT) to handle secure user authentication.
 - **SSL Encryption**: Ensures secure HTTP communication through SSL encryption.
@@ -16,10 +17,10 @@ This project is a password manager application built using Spring Boot, ReactJS,
 ## Technologies Used
 - **Frontend**: ReactJS, Material-UI (MUI), Electron, SwiperJS
 - **Backend**: Spring Boot, Spring Security
+- **Database**: SQLite
 - **Email Service**: SMTP
 - **Authentication**: JSON Web Tokens (JWT)
 - **Encryption**: SSL, Cryptographic Encryption
-
 
 ### Usage
 1. Register a new account by providing an email address.
